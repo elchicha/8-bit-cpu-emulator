@@ -1,4 +1,5 @@
-from emulator.cpu import Register
+from emulator.register import Register
+
 
 class TestRegister:
     def test_register_initializes_to_zero(self):

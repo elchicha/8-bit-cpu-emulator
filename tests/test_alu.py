@@ -1,4 +1,4 @@
-from emulator.cpu import ALU
+from emulator.alu import ALU
 
 
 def test_alu_add_simple():
