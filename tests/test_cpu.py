@@ -70,3 +70,60 @@ def test_cpu_nop():
     cpu.step()
 
     assert cpu.program_counter.get() == 0x01
+
+
+def test_sub_immediate():
+    """SUB #$03 - Subtract immediate value from accumulator"""
+    cpu = CPU()
+    cpu.accumulator.set(0x0A)  # A = 10
+
+    # Opcode: 0xE9 = SUB immediate
+    cpu.memory.write_byte(0x0000, 0xE9)
+    cpu.memory.write_byte(0x0001, 0x03)  # subtract 3
+
+    cpu.step()
+
+    assert cpu.accumulator.get() == 0x07  # 10 - 3 = 7
+    assert cpu.program_counter.get() == 0x02
+
+
+def test_sub_with_underflow():
+    """SUB should wrap on underflow"""
+    cpu = CPU()
+    cpu.accumulator.set(0x05)  # A = 5
+
+    cpu.memory.write_byte(0x0000, 0xE9)
+    cpu.memory.write_byte(0x0001, 0x0A)  # subtract 10
+
+    cpu.step()
+
+    assert cpu.accumulator.get() == 0xFB  # 5 - 10 = -5 wraps to 251
+    assert cpu.alu.carry_flag == True  # Borrow occurred
+
+
+def test_sub_sets_zero_flag():
+    """SUB should set zero flag when result is 0"""
+    cpu = CPU()
+    cpu.accumulator.set(0x05)
+
+    cpu.memory.write_byte(0x0000, 0xE9)
+    cpu.memory.write_byte(0x0001, 0x05)  # 5 - 5 = 0
+
+    cpu.step()
+
+    assert cpu.accumulator.get() == 0x00
+    assert cpu.alu.zero_flag == True
+
+
+def test_sub_sets_negative_flag():
+    """SUB should set negative flag when bit 7 is set"""
+    cpu = CPU()
+    cpu.accumulator.set(0x00)
+
+    cpu.memory.write_byte(0x0000, 0xE9)
+    cpu.memory.write_byte(0x0001, 0x01)  # 0 - 1 = 255
+
+    cpu.step()
+
+    assert cpu.accumulator.get() == 0xFF
+    assert cpu.alu.negative_flag == True
