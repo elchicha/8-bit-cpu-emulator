@@ -24,6 +24,12 @@ class CPU:
             0x8A: self._execute_txa,            # TXA
             0x98: self._execute_tya,            # TYA
 
+            # Increment / Decrement instructions
+            0xE8: self._execute_inx,            # INX
+            0xC8: self._execute_iny,            # INY
+            0xCA: self._execute_dex,            # DEX
+            0x88: self._execute_dey,            # DEY
+
             # Arithmetic instructions
             0x69: self._execute_add_immediate,  # ADC #immediate
             0xE9: self._execute_sub_immediate,  # SBC #immediate
@@ -138,6 +144,38 @@ class CPU:
         pc = self.program_counter.get()
         y_register_value = self.y_register.get()
         self.accumulator.set(y_register_value)
+        self.program_counter.set(pc + 1)
+
+    def _execute_inx(self):
+        """INX - Increment X register"""
+        pc = self.program_counter.get()
+        current = self.x_register.get()
+        result = self.alu.add(current, 0x01)
+        self.x_register.set(result)
+        self.program_counter.set(pc + 1)
+
+    def _execute_iny(self):
+        """INY - Increment Y register"""
+        pc = self.program_counter.get()
+        current = self.y_register.get()
+        result = self.alu.add(current, 0x01)
+        self.y_register.set(result)
+        self.program_counter.set(pc + 1)
+
+    def _execute_dex(self):
+        """DEX - Decrement X register"""
+        pc = self.program_counter.get()
+        current = self.x_register.get()
+        result = self.alu.sub(current, 0x01)
+        self.x_register.set(result)
+        self.program_counter.set(pc + 1)
+
+    def _execute_dey(self):
+        """DEY - Decrement Y register"""
+        pc = self.program_counter.get()
+        current = self.y_register.get()
+        result = self.alu.sub(current, 0x01)
+        self.y_register.set(result)
         self.program_counter.set(pc + 1)
 
     def _execute_add_immediate(self):
