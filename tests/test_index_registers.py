@@ -93,31 +93,99 @@ def test_tay():
 
     assert cpu.y_register.get() == 0x66
     assert cpu.accumulator.get() == 0x66  # A unchanged
+    assert cpu.program_counter.get() == 0x01
 
 
 def test_txa():
     """TXA - Transfer X to Accumulator"""
     cpu = CPU()
     cpu.x_register.set(0x88)
-
     # Opcode: 0x8A = TXA
     cpu.memory.write_byte(0x0000, 0x8A)
-
     cpu.step()
-
     assert cpu.accumulator.get() == 0x88
     assert cpu.x_register.get() == 0x88  # X unchanged
-
+    assert cpu.program_counter.get() == 0x01
 
 def test_tya():
     """TYA - Transfer Y to Accumulator"""
     cpu = CPU()
     cpu.y_register.set(0x99)
-
     # Opcode: 0x98 = TYA
     cpu.memory.write_byte(0x0000, 0x98)
+    cpu.step()
+    assert cpu.accumulator.get() == 0x99
+    assert cpu.y_register.get() == 0x99  # Y unchanged
+    assert cpu.program_counter.get() == 0x01
+
+def test_inx():
+    """INX - Increment X register"""
+    cpu = CPU()
+    cpu.x_register.set(0x05)
+    # Opcode: 0xE8 = INX
+    cpu.memory.write_byte(0x0000, 0xE8)
+    cpu.step()
+    assert cpu.x_register.get() == 0x06
+    assert cpu.program_counter.get() == 0x01
+
+def test_inx_overflow():
+    """INX should wrap at 0xFF"""
+    cpu = CPU()
+    cpu.x_register.set(0xFF)
+
+    cpu.memory.write_byte(0x0000, 0xE8)
 
     cpu.step()
 
-    assert cpu.accumulator.get() == 0x99
-    assert cpu.y_register.get() == 0x99  # Y unchanged
+    assert cpu.x_register.get() == 0x00  # Wrapped!
+
+
+def test_iny():
+    """INY - Increment Y register"""
+    cpu = CPU()
+    cpu.y_register.set(0x10)
+
+    # Opcode: 0xC8 = INY
+    cpu.memory.write_byte(0x0000, 0xC8)
+
+    cpu.step()
+
+    assert cpu.y_register.get() == 0x11
+
+
+def test_dex():
+    """DEX - Decrement X register"""
+    cpu = CPU()
+    cpu.x_register.set(0x05)
+
+    # Opcode: 0xCA = DEX
+    cpu.memory.write_byte(0x0000, 0xCA)
+
+    cpu.step()
+
+    assert cpu.x_register.get() == 0x04
+
+
+def test_dex_underflow():
+    """DEX should wrap at 0x00"""
+    cpu = CPU()
+    cpu.x_register.set(0x00)
+
+    cpu.memory.write_byte(0x0000, 0xCA)
+
+    cpu.step()
+
+    assert cpu.x_register.get() == 0xFF  # Wrapped!
+
+
+def test_dey():
+    """DEY - Decrement Y register"""
+    cpu = CPU()
+    cpu.y_register.set(0x20)
+
+    # Opcode: 0x88 = DEY
+    cpu.memory.write_byte(0x0000, 0x88)
+
+    cpu.step()
+
+    assert cpu.y_register.get() == 0x1F
