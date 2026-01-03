@@ -19,10 +19,9 @@ def test_countdown_loop():
     cpu.memory.write_byte(0x0000, 0xA9)
     cpu.memory.write_byte(0x0001, 0x05)
 
-    # Address 0x0002: SUB #$01 (we need to implement SUB!)
-    # For now, let's use ADD #$FF (which is like subtracting 1)
-    cpu.memory.write_byte(0x0002, 0x69)  # ADD immediate
-    cpu.memory.write_byte(0x0003, 0xFF)  # value: -1 (wraps to 255)
+    # Address 0x0002: SUB #$01
+    cpu.memory.write_byte(0x0002, 0xE9)
+    cpu.memory.write_byte(0x0003, 0x01)
 
     # Address 0x0004: STA $0200
     cpu.memory.write_byte(0x0004, 0x8D)  # STA absolute
