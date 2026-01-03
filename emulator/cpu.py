@@ -18,6 +18,12 @@ class CPU:
             0x8E: self._execute_stx_absolute,  # STX absolute
             0x8C: self._execute_sty_absolute,  # STY absolute
 
+            # Transfer instructions
+            0xAA: self._execute_tax,            # TAX
+            0xA8: self._execute_tay,            # TAY
+            0x8A: self._execute_txa,            # TXA
+            0x98: self._execute_tya,            # TYA
+
             # Arithmetic instructions
             0x69: self._execute_add_immediate,  # ADC #immediate
             0xE9: self._execute_sub_immediate,  # SBC #immediate
@@ -48,11 +54,9 @@ class CPU:
         """Execute one CPU instruction (Fetch, Decode, Execute)"""
         pc = self.program_counter.get()
         opcode = self.memory.read_byte(pc)
-
         handler = self.opcode_table.get(opcode)
         if handler is None:
             raise NotImplementedError(f"Opcode {opcode:02X} not implemented")
-
         handler()
 
     def _execute_lda_immediate(self):
@@ -62,7 +66,6 @@ class CPU:
         pc = self.program_counter.get()
         value = self.memory.read_byte(pc + 1)
         self.accumulator.set(value)
-
         self.program_counter.set(pc + 2)
 
     def _execute_ldx_immediate(self):
@@ -70,7 +73,6 @@ class CPU:
         pc = self.program_counter.get()
         value = self.memory.read_byte(pc + 1)
         self.x_register.set(value)
-
         self.program_counter.set(pc + 2)
 
     def _execute_ldy_immediate(self):
@@ -78,47 +80,65 @@ class CPU:
         pc = self.program_counter.get()
         value = self.memory.read_byte(pc + 1)
         self.y_register.set(value)
-
         self.program_counter.set(pc + 2)
 
     def _execute_sta_absolute(self):
         """Store accumulator value to absolute address"""
         pc = self.program_counter.get()
-
         addr_low = self.memory.read_byte(pc + 1)
         addr_high = self.memory.read_byte(pc + 2)
         address = (addr_high << 8) | addr_low
-
         value = self.accumulator.get()
         self.memory.write_byte(address, value)
-
         self.program_counter.set(pc + 3)
 
     def _execute_stx_absolute(self):
         """Store X index value to absolute address"""
         pc = self.program_counter.get()
-
         addr_low = self.memory.read_byte(pc + 1)
         addr_high = self.memory.read_byte(pc + 2)
         address = (addr_high << 8) | addr_low
-
         value = self.x_register.get()
         self.memory.write_byte(address, value)
-
         self.program_counter.set(pc + 3)
 
     def _execute_sty_absolute(self):
         """Store Y index value to absolute address"""
         pc = self.program_counter.get()
-
         addr_low = self.memory.read_byte(pc + 1)
         addr_high = self.memory.read_byte(pc + 2)
         address = (addr_high << 8) | addr_low
-
         value = self.y_register.get()
         self.memory.write_byte(address, value)
-
         self.program_counter.set(pc + 3)
+
+    def _execute_tax(self):
+        """TAX - Transfer Accumulator to X"""
+        pc = self.program_counter.get()
+        accumulator_value = self.accumulator.get()
+        self.x_register.set(accumulator_value)
+        self.program_counter.set(pc + 1)
+
+    def _execute_tay(self):
+        """TAY - Transfer Accumulator to Y"""
+        pc = self.program_counter.get()
+        accumulator_value = self.accumulator.get()
+        self.y_register.set(accumulator_value)
+        self.program_counter.set(pc + 1)
+
+    def _execute_txa(self):
+        """TXA - Transfer X to Accumulator"""
+        pc = self.program_counter.get()
+        x_register_value = self.x_register.get()
+        self.accumulator.set(x_register_value)
+        self.program_counter.set(pc + 1)
+
+    def _execute_tya(self):
+        """TYA - Transfer Y to Accumulator"""
+        pc = self.program_counter.get()
+        y_register_value = self.y_register.get()
+        self.accumulator.set(y_register_value)
+        self.program_counter.set(pc + 1)
 
     def _execute_add_immediate(self):
         """ADD #$10 - Add immediate value to accumulator"""
@@ -137,11 +157,9 @@ class CPU:
     def _execute_jmp_absolute(self):
         """JMP $0200 - Jump to absolute address"""
         pc = self.program_counter.get()
-
         addr_low = self.memory.read_byte(pc + 1)
         addr_high = self.memory.read_byte(pc + 2)
         target_address = (addr_high << 8) | addr_low
-
         self.program_counter.set(target_address)
 
     def _execute_bne(self):
@@ -153,10 +171,8 @@ class CPU:
             offset -= 0x100 # Convert to negative
 
         pc = pc + 2 # Move past the BNE instruction
-
         if not self.alu.zero_flag:
             pc += offset
-
         self.program_counter.set(pc)
 
     def _execute_beq(self):
@@ -166,12 +182,9 @@ class CPU:
 
         if offset >= 0x80:
             offset -= 0x100  # Convert to negative
-
         pc = pc + 2  # Move past the BNE instruction
-
         if self.alu.zero_flag:
             pc += offset
-
         self.program_counter.set(pc)
 
     def _execute_sub_immediate(self):
@@ -179,9 +192,6 @@ class CPU:
         pc = self.program_counter.get()
         operand = self.memory.read_byte(pc + 1)
         accumulator_value = self.accumulator.get()
-
         result = self.alu.sub(accumulator_value, operand)
-
         self.accumulator.set(result)
-
         self.program_counter.set(pc + 2)
