@@ -7,17 +7,6 @@ class CPU:
 
 
     def __init__(self):
-        self.accumulator = Register8()
-        self.program_counter = Register16()
-        self.stack_pointer = Register8()
-        self.x_register = Register8()
-        self.y_register = Register8()
-
-        self.memory = Memory()
-        self.alu = ALU()
-        self.stack_pointer.set(0xFF)
-
-        # Build the opcode dispatch table (grouped by instruction type)
         self.opcode_table = {
             # Load instructions
             0xA9: self._execute_lda_immediate,  # LDA #immediate
@@ -26,6 +15,8 @@ class CPU:
 
             # Store instructions
             0x8D: self._execute_sta_absolute,  # STA absolute
+            0x8E: self._execute_stx_absolute,  # STX absolute
+            0x8C: self._execute_sty_absolute,  # STY absolute
 
             # Arithmetic instructions
             0x69: self._execute_add_immediate,  # ADC #immediate
@@ -41,6 +32,17 @@ class CPU:
             # Other instructions
             0xEA: self._execute_nop,  # NOP (No Operation)
         }
+        self.accumulator = Register8()
+        self.program_counter = Register16()
+        self.stack_pointer = Register8()
+        self.x_register = Register8()
+        self.y_register = Register8()
+
+        self.memory = Memory()
+        self.alu = ALU()
+        self.stack_pointer.set(0xFF)
+
+        # Build the opcode dispatch table (grouped by instruction type)
 
     def step(self):
         """Execute one CPU instruction (Fetch, Decode, Execute)"""
@@ -88,6 +90,32 @@ class CPU:
         address = (addr_high << 8) | addr_low
 
         value = self.accumulator.get()
+        self.memory.write_byte(address, value)
+
+        self.program_counter.set(pc + 3)
+
+    def _execute_stx_absolute(self):
+        """Store X index value to absolute address"""
+        pc = self.program_counter.get()
+
+        addr_low = self.memory.read_byte(pc + 1)
+        addr_high = self.memory.read_byte(pc + 2)
+        address = (addr_high << 8) | addr_low
+
+        value = self.x_register.get()
+        self.memory.write_byte(address, value)
+
+        self.program_counter.set(pc + 3)
+
+    def _execute_sty_absolute(self):
+        """Store Y index value to absolute address"""
+        pc = self.program_counter.get()
+
+        addr_low = self.memory.read_byte(pc + 1)
+        addr_high = self.memory.read_byte(pc + 2)
+        address = (addr_high << 8) | addr_low
+
+        value = self.y_register.get()
         self.memory.write_byte(address, value)
 
         self.program_counter.set(pc + 3)
@@ -145,18 +173,6 @@ class CPU:
             pc += offset
 
         self.program_counter.set(pc)
-
-    def test_beq_branch_not_taken():
-        """BEQ - Don't branch when zero flag is clear"""
-        cpu = CPU()
-        cpu.alu.zero_flag = False
-
-        cpu.memory.write_byte(0x0000, 0xF0)
-        cpu.memory.write_byte(0x0001, 0x05)
-
-        cpu.step()
-
-        assert cpu.program_counter.get() == 0x0002
 
     def _execute_sub_immediate(self):
         """SUB #$nn - Subtract immediate value from accumulator"""
